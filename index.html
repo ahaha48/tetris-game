@@ -154,41 +154,83 @@
     #touch-controls { display: none; }
 
     @media (max-width: 540px) {
-      #title { font-size: 28px; margin-bottom: 6px; }
+      body {
+        justify-content: flex-start;
+        padding-top: 6px;
+        padding-bottom: 106px; /* room for fixed touch controls */
+      }
+      #title { font-size: 22px; margin-bottom: 4px; letter-spacing: 3px; }
 
       #game-container {
         flex-direction: column;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
+        width: 100%;
       }
       #side-panel {
         flex-direction: row;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         min-width: unset;
         width: 100%;
-        gap: 5px;
+        gap: 4px;
         justify-content: center;
+        padding: 0 4px;
       }
-      .panel-box { padding: 6px 10px; }
-      .panel-box h3 { font-size: 9px; }
-      .panel-box p  { font-size: 20px; }
+      .panel-box { padding: 5px 8px; border-radius: 10px; }
+      .panel-box h3 { font-size: 8px; margin-bottom: 1px; }
+      .panel-box p  { font-size: 18px; }
+      #next-box { display: none; }   /* NEXT は省略してスペース確保 */
+      #btn-box  { display: none; }   /* BGM/GHOST はタッチ操作エリアへ */
       #controls-box { display: none; }
 
+      /* fixed at bottom */
       #touch-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 100;
+        background: rgba(7,7,26,0.92);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        padding: 6px 8px 10px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+      }
+      /* 上段: BGM + GHOST */
+      #mini-btns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+      }
+      .mini-btn {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 8px;
+        color: #fff;
+        font-family: 'Nunito', sans-serif;
+        font-weight: 800;
+        font-size: 12px;
+        padding: 5px 0;
+        cursor: pointer;
+        text-align: center;
+      }
+      #mini-mute  { background: linear-gradient(135deg,rgba(255,107,203,.3),rgba(196,79,224,.2)); }
+      #mini-ghost { background: linear-gradient(135deg,rgba(107,174,255,.3),rgba(78,205,196,.2)); }
+      #mini-ghost.off { background: rgba(80,80,80,0.3); color: #888; }
+      /* 下段: 操作ボタン */
+      #ctrl-btns {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 6px;
-        width: 100%;
-        padding: 8px 4px 4px;
-        max-width: 380px;
+        gap: 5px;
       }
       .t-btn {
         background: rgba(255,255,255,0.1);
         border: 1.5px solid rgba(255,255,255,0.2);
-        border-radius: 12px;
+        border-radius: 10px;
         color: #fff;
-        font-size: 20px;
-        padding: 13px 0;
+        font-size: 18px;
+        padding: 10px 0;
         text-align: center;
         cursor: pointer;
         user-select: none;
@@ -196,8 +238,8 @@
         font-family: 'Nunito', sans-serif;
         font-weight: 800;
       }
-      .t-btn:active { background: rgba(255,255,255,0.28); }
-      .t-btn.wide { grid-column: span 2; font-size: 14px; }
+      .t-btn:active { background: rgba(255,255,255,0.3); }
+      .t-btn.wide { grid-column: span 2; font-size: 13px; }
       #btn-left   { background: linear-gradient(135deg,rgba(255,107,203,.25),rgba(255,107,203,.1)); }
       #btn-right  { background: linear-gradient(135deg,rgba(107,174,255,.25),rgba(107,174,255,.1)); }
       #btn-rotate { background: linear-gradient(135deg,rgba(255,216,111,.25),rgba(255,216,111,.1)); }
@@ -235,7 +277,7 @@
       <h3>NEXT</h3>
       <canvas id="next-canvas" width="80" height="80"></canvas>
     </div>
-    <div class="panel-box" style="display:flex;flex-direction:column;gap:7px;">
+    <div class="panel-box" id="btn-box" style="display:flex;flex-direction:column;gap:7px;">
       <button class="pill-btn" id="mute-btn">🔊 BGM</button>
       <button class="pill-btn" id="ghost-btn">👻 GHOST ON</button>
     </div>
@@ -249,13 +291,19 @@
   </div>
 </div>
 
-<!-- Touch buttons (mobile only) -->
+<!-- Touch buttons (mobile only, fixed bottom) -->
 <div id="touch-controls">
-  <button class="t-btn" id="btn-left">◀</button>
-  <button class="t-btn" id="btn-rotate">↻</button>
-  <button class="t-btn wide" id="btn-drop">⬇ DROP</button>
-  <button class="t-btn" id="btn-right">▶</button>
-  <button class="t-btn" id="btn-down">▼</button>
+  <div id="mini-btns">
+    <button class="mini-btn" id="mini-mute">🔊 BGM</button>
+    <button class="mini-btn" id="mini-ghost">👻 GHOST ON</button>
+  </div>
+  <div id="ctrl-btns">
+    <button class="t-btn" id="btn-left">◀</button>
+    <button class="t-btn" id="btn-rotate">↻</button>
+    <button class="t-btn wide" id="btn-drop">⬇ DROP</button>
+    <button class="t-btn" id="btn-right">▶</button>
+    <button class="t-btn" id="btn-down">▼</button>
+  </div>
 </div>
 
 <script>
@@ -299,15 +347,20 @@ const nctx = nextCanvas.getContext('2d');
 function calcBlockSize() {
   const isMobile = window.innerWidth <= 540;
   if (isMobile) {
-    const availH = window.innerHeight - 28 - 60 - 90 - 24;
-    const availW = window.innerWidth - 12;
+    const CTRL_H  = 106; // fixed touch controls + padding-bottom
+    const TITLE_H = 30;
+    const STATS_H = 52;
+    const GAP     = 14;
+    const availH = window.innerHeight - CTRL_H - TITLE_H - STATS_H - GAP;
+    const availW = window.innerWidth - 8;
     BLOCK = Math.floor(Math.min(availW / COLS, availH / ROWS));
+    BLOCK = Math.min(BLOCK, 26); // cap so controls never get pushed off
   } else {
     const availH = window.innerHeight - 80;
     const availW = window.innerWidth - 160;
     BLOCK = Math.floor(Math.min(availW / COLS, availH / ROWS, 32));
   }
-  BLOCK = Math.max(BLOCK, 20);
+  BLOCK = Math.max(BLOCK, 18);
   canvas.width  = BLOCK * COLS;
   canvas.height = BLOCK * ROWS;
 }
@@ -604,6 +657,31 @@ document.getElementById('btn-rotate').addEventListener('touchstart', e => { e.pr
 document.getElementById('btn-drop').addEventListener('touchstart',   e => { e.preventDefault(); hardDrop();  }, {passive:false});
 
 canvas.addEventListener('click', () => { if (gameOver) init(); });
+
+// ===== MINI BUTTONS (mobile) =====
+const miniMute = document.getElementById('mini-mute');
+const miniGhost = document.getElementById('mini-ghost');
+if (miniMute) {
+  miniMute.addEventListener('touchstart', e => {
+    e.preventDefault();
+    muted = !muted;
+    bgm.muted = muted;
+    const label = muted ? '🔇 BGM' : '🔊 BGM';
+    miniMute.textContent = label;
+    document.getElementById('mute-btn').textContent = label;
+  }, {passive: false});
+}
+if (miniGhost) {
+  miniGhost.addEventListener('touchstart', e => {
+    e.preventDefault();
+    ghostOn = !ghostOn;
+    const label = ghostOn ? '👻 GHOST ON' : '👻 GHOST OFF';
+    miniGhost.textContent = label;
+    miniGhost.classList.toggle('off', !ghostOn);
+    document.getElementById('ghost-btn').textContent = label;
+    document.getElementById('ghost-btn').classList.toggle('off', !ghostOn);
+  }, {passive: false});
+}
 
 init();
 </script>
