@@ -67,6 +67,58 @@
       background: linear-gradient(135deg, #ff6bcb, #ffd86f, #6bffd8, #6baeff);
       box-shadow: 0 0 30px rgba(255,107,203,0.4), 0 0 60px rgba(107,174,255,0.2);
     }
+
+    /* ===== START SCREEN ===== */
+    #start-screen {
+      position: absolute;
+      inset: 0;
+      border-radius: 11px;
+      background: rgba(7, 7, 26, 0.88);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+      z-index: 10;
+    }
+    #start-screen .start-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 42px;
+      letter-spacing: 5px;
+      background: linear-gradient(90deg, #ff6bcb, #ffd86f, #6bffd8, #6baeff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 16px rgba(255,107,203,0.7));
+    }
+    #start-screen .deco {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 1px;
+    }
+    #start-btn {
+      font-family: 'Fredoka One', cursive;
+      font-size: 22px;
+      letter-spacing: 2px;
+      padding: 14px 48px;
+      border: none;
+      border-radius: 50px;
+      background: linear-gradient(135deg, #ff6bcb, #c44fe0, #6baeff);
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 0 24px rgba(255,107,203,0.6);
+      transition: transform 0.12s, filter 0.12s;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    #start-btn:hover  { filter: brightness(1.15); }
+    #start-btn:active { transform: scale(0.95); }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 24px rgba(255,107,203,0.6); }
+      50%       { box-shadow: 0 0 40px rgba(255,107,203,0.95); }
+    }
+    #start-screen.hidden { display: none; }
     #board {
       display: block;
       border-radius: 11px;
@@ -257,6 +309,12 @@
   <div id="board-wrap">
     <canvas id="board"></canvas>
     <div id="message"></div>
+    <div id="start-screen">
+      <div class="start-title">TETRIS</div>
+      <div class="deco">✦ ✦ ✦</div>
+      <button id="start-btn">START</button>
+      <div class="deco">タップ / Enter でもスタート</div>
+    </div>
   </div>
 
   <!-- Side panel -->
@@ -397,6 +455,15 @@ const PIECES = [
 let board, piece, pieceX, pieceY, nextPiece;
 let score, level, lines, gameOver, paused;
 let lastTime = 0, dropAccum = 0, animId;
+let started = false;
+
+function startGame() {
+  if (started) return;
+  started = true;
+  bgmUnlocked = true;
+  document.getElementById('start-screen').classList.add('hidden');
+  init();
+}
 
 function init() {
   board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
@@ -597,6 +664,7 @@ function gameLoop(timestamp) {
 
 // ===== KEYBOARD =====
 document.addEventListener('keydown', e => {
+  if (!started) { startGame(); return; }
   unlockBgm();
   if (e.key === 'Enter' && gameOver) { init(); return; }
   if (gameOver) return;
@@ -619,6 +687,7 @@ document.addEventListener('keydown', e => {
 let touchStartX, touchStartY, touchStartTime;
 canvas.addEventListener('touchstart', e => {
   e.preventDefault();
+  if (!started) { startGame(); return; }
   unlockBgm();
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
@@ -656,7 +725,14 @@ bindBtn('btn-down',  () => { drop(); score++; updateUI(); });
 document.getElementById('btn-rotate').addEventListener('touchstart', e => { e.preventDefault(); tryRotate(); }, {passive:false});
 document.getElementById('btn-drop').addEventListener('touchstart',   e => { e.preventDefault(); hardDrop();  }, {passive:false});
 
-canvas.addEventListener('click', () => { if (gameOver) init(); });
+canvas.addEventListener('click', () => {
+  if (!started) { startGame(); return; }
+  if (gameOver) init();
+});
+
+// START BUTTON
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('start-btn').addEventListener('touchstart', e => { e.preventDefault(); startGame(); }, {passive:false});
 
 // ===== MINI BUTTONS (mobile) =====
 const miniMute = document.getElementById('mini-mute');
@@ -683,7 +759,13 @@ if (miniGhost) {
   }, {passive: false});
 }
 
-init();
+// ページロード時はグリッドだけ描画してスタート画面を表示
+calcBlockSize();
+ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+ctx.lineWidth = 1;
+for (let r = 0; r < ROWS; r++)
+  for (let c = 0; c < COLS; c++)
+    ctx.strokeRect(c*BLOCK, r*BLOCK, BLOCK, BLOCK);
 </script>
 </body>
 </html>
